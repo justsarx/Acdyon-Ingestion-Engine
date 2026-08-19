@@ -15,10 +15,11 @@
 ---
 
 ## 🔗 Live Production Links
+* **Author**: Sarthak (`justsarx` / `sinhasarthak56@gmail.com`)
 * **Live Deployed URL**: **[https://acdyon-ingestion-engine.onrender.com](https://acdyon-ingestion-engine.onrender.com)**
 * **GitHub Public Repo**: **[https://github.com/justsarx/Acdyon-Ingestion-Engine](https://github.com/justsarx/Acdyon-Ingestion-Engine)**
-* **Mandatory Decisions Document**: **[DECISIONS.md](file:///home/justsarx/acdyon/DECISIONS.md)**
-* **Architecture Reference Specification**: **[architecture_reference.md](file:///home/justsarx/acdyon/architecture_reference.md)**
+* **Mandatory Decisions & Systems Document**: **[DECISIONS.md](file:///home/justsarx/acdyon/DECISIONS.md)**
+* **Detailed Architecture Document**: **[docs/architecture.md](file:///home/justsarx/acdyon/docs/architecture.md)**
 
 ---
 
@@ -75,13 +76,12 @@ acdyon-ingestion-engine/
 │   └── engine.test.ts        # Comprehensive 11-point unit & integration test suite
 ├── .dockerignore
 ├── .gitignore
-├── DECISIONS.md              # 1-page mandatory decisions document
+├── DECISIONS.md              # Unified Decisions & Systems Architecture Document
 ├── Dockerfile                # Multi-stage hardened non-root production container
 ├── docker-compose.yml        # One-click Docker container orchestrator
 ├── package.json
 ├── tsconfig.json
 ├── render.yaml               # Infrastructure-as-Code blueprint for Render
-├── architecture_reference.md # Full architectural reference & systems specification
 └── README.md
 ```
 
@@ -232,10 +232,10 @@ This repository includes [`render.yaml`](file:///home/justsarx/acdyon/render.yam
 
 | Criterion | Location in Codebase | Compliance Status |
 | :--- | :--- | :--- |
-| **Detection Surface Mapping** | [`architecture_reference.md#2`](file:///home/justsarx/acdyon/architecture_reference.md#2), [`src/config/user-agents.ts`](file:///home/justsarx/acdyon/src/config/user-agents.ts) | 100% (Headless, JA3/JA4, Client Hints, Heuristics) |
-| **Ingestion & Session Strategy** | [`architecture_reference.md#3`](file:///home/justsarx/acdyon/architecture_reference.md#3), [`src/ingestion/rate-limiter.ts`](file:///home/justsarx/acdyon/src/ingestion/rate-limiter.ts) | 100% (Token bucket, Jitter, SWR Cache, Plan B) |
-| **Resilience & Fault Tolerance** | [`architecture_reference.md#4`](file:///home/justsarx/acdyon/architecture_reference.md#4), [`src/ingestion/HTML-parser.ts`](file:///home/justsarx/acdyon/src/ingestion/HTML-parser.ts) | 100% (4-tier fallback, Zod schema, Diagnostics) |
-| **Where You'd Stop (Ethics/ToS)** | [`architecture_reference.md#5`](file:///home/justsarx/acdyon/architecture_reference.md#5), [`DECISIONS.md`](file:///home/justsarx/acdyon/DECISIONS.md) | 100% (Robots.txt, no auth bypass, sub-second pace) |
+| **Detection Surface Mapping** | [`DECISIONS.md#3`](file:///home/justsarx/acdyon/DECISIONS.md#3), [`docs/architecture.md`](file:///home/justsarx/acdyon/docs/architecture.md), [`src/config/user-agents.ts`](file:///home/justsarx/acdyon/src/config/user-agents.ts) | 100% (Headless, JA3/JA4, Client Hints, Heuristics) |
+| **Ingestion & Session Strategy** | [`DECISIONS.md#4`](file:///home/justsarx/acdyon/DECISIONS.md#4), [`src/ingestion/rate-limiter.ts`](file:///home/justsarx/acdyon/src/ingestion/rate-limiter.ts) | 100% (Token bucket, Jitter, SWR Cache, Plan B) |
+| **Resilience & Fault Tolerance** | [`DECISIONS.md#5`](file:///home/justsarx/acdyon/DECISIONS.md#5), [`src/ingestion/HTML-parser.ts`](file:///home/justsarx/acdyon/src/ingestion/HTML-parser.ts) | 100% (4-tier fallback, Zod schema, Diagnostics) |
+| **Where You'd Stop (Ethics/ToS)** | [`DECISIONS.md#6`](file:///home/justsarx/acdyon/DECISIONS.md#6) | 100% (Robots.txt, no auth bypass, sub-second pace) |
 | **Live Deployed URL** | Render Free Web Service | Active at `https://acdyon-ingestion-engine.onrender.com` |
-| **1-Page DECISIONS.md** | [`DECISIONS.md`](file:///home/justsarx/acdyon/DECISIONS.md) | 100% compliant with 3 required questions |
+| **Mandatory DECISIONS.md** | [`DECISIONS.md`](file:///home/justsarx/acdyon/DECISIONS.md) | 100% compliant with questions & full architecture |
 | **Bonus Round Easter Egg** | [`src/server.ts`](file:///home/justsarx/acdyon/src/server.ts) | Konami Code & status dot telemetry HUD |

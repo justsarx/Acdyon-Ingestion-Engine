@@ -1,6 +1,6 @@
 # Acdyon Ingestion Engine: Architectural Design & Resilience Specification
 
-**Author**: Sarthak Sinha (`justsarx` / `sinhasarthak56@gmail.com`)  
+**Author**: Sarthak (`justsarx` / `sinhasarthak56@gmail.com`)  
 **Track**: Part 1 Track — Ingestion & Resilience Architecture + Sandbox Demo  
 **Live Deployed Demo**: `https://acdyon-ingestion-engine.onrender.com`  
 **GitHub Repository**: `https://github.com/justsarx/Acdyon-Ingestion-Engine`  

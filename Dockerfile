@@ -42,7 +42,7 @@ COPY --chown=node:node --from=builder /app/dist ./dist
 COPY --chown=node:node --from=builder /app/package.json ./package.json
 
 # Copy documentation
-COPY --chown=node:node DECISIONS.md architecture_reference.md README.md ./
+COPY --chown=node:node DECISIONS.md README.md ./
 
 # Switch to non-privileged node user for security
 USER node

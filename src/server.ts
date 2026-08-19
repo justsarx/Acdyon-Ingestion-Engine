@@ -546,7 +546,7 @@ app.get('/', (req: Request, res: Response) => {
     <footer>
       <p>Acdyon Technologies Engineering Assessment (Part 1 Track: Ingestion & Resilience Architecture).</p>
       <p style="margin-top: 0.4rem;">
-        Engineered with Node.js, TypeScript, Cheerio, xml2js, Helmet, and Zod. Read <a href="https://github.com/justsarx/Acdyon-Ingestion-Engine/blob/main/DECISIONS.md" target="_blank">DECISIONS.md</a> &amp; <a href="https://github.com/justsarx/Acdyon-Ingestion-Engine/blob/main/architecture_reference.md" target="_blank">architecture_reference.md</a>.
+        Engineered with Node.js, TypeScript, Cheerio, xml2js, Helmet, and Zod. Read <a href="https://github.com/justsarx/Acdyon-Ingestion-Engine/blob/main/DECISIONS.md" target="_blank">DECISIONS.md</a> &amp; <a href="https://github.com/justsarx/Acdyon-Ingestion-Engine/blob/main/docs/architecture.md" target="_blank">docs/architecture.md</a>.
       </p>
     </footer>
   </div>
