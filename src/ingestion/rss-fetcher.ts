@@ -27,14 +27,91 @@ export interface IngestionResult {
   jobs: JobListing[];
 }
 
+export interface FetchFeedResult {
+  jobs: JobListing[];
+  cached: boolean;
+  cacheAgeMs: number;
+}
+
+interface CacheEntry {
+  jobs: JobListing[];
+  timestamp: number;
+}
+
+// In-Memory Cache with Stale-While-Revalidate (SWR)
+const feedCache = new Map<string, CacheEntry>();
+const CACHE_TTL_MS = 60 * 1000; // 60 seconds fresh window
+const STALE_TTL_MS = 10 * 60 * 1000; // 10 minutes stale-while-revalidate window
+let isRefreshingBackground = false;
+
 /**
  * Low-risk, compliant RSS feed fetcher with token-bucket pacing,
- * exponential backoff retry logic, and Zod contract validation.
+ * in-memory SWR caching for sub-10ms latency, and Zod contract validation.
  */
 export async function fetchPublicJobs(
   feedUrl: string = 'https://weworkremotely.com/remote-jobs.rss',
-  maxRetries: number = 3
+  maxRetries: number = 3,
+  bypassCache: boolean = false
 ): Promise<JobListing[]> {
+  const result = await fetchPublicJobsWithMetadata(feedUrl, maxRetries, bypassCache);
+  return result.jobs;
+}
+
+/**
+ * Enhanced fetcher returning caching metadata for latency telemetry.
+ */
+export async function fetchPublicJobsWithMetadata(
+  feedUrl: string = 'https://weworkremotely.com/remote-jobs.rss',
+  maxRetries: number = 3,
+  bypassCache: boolean = false
+): Promise<FetchFeedResult> {
+  const now = Date.now();
+  const cached = feedCache.get(feedUrl);
+
+  // 1. Return fresh cached data immediately (< 2ms)
+  if (!bypassCache && cached && now - cached.timestamp < CACHE_TTL_MS) {
+    return {
+      jobs: cached.jobs,
+      cached: true,
+      cacheAgeMs: now - cached.timestamp,
+    };
+  }
+
+  // 2. Stale-While-Revalidate (SWR): Return stale data immediately while refreshing in background
+  if (!bypassCache && cached && now - cached.timestamp < STALE_TTL_MS) {
+    if (!isRefreshingBackground) {
+      isRefreshingBackground = true;
+      executeUpstreamFetch(feedUrl, maxRetries)
+        .then((freshJobs) => {
+          feedCache.set(feedUrl, { jobs: freshJobs, timestamp: Date.now() });
+        })
+        .catch((err) => {
+          console.warn('[SWR Background Refresh Failed]', err.message);
+        })
+        .finally(() => {
+          isRefreshingBackground = false;
+        });
+    }
+
+    return {
+      jobs: cached.jobs,
+      cached: true,
+      cacheAgeMs: now - cached.timestamp,
+    };
+  }
+
+  // 3. Cold Fetch from Upstream
+  const freshJobs = await executeUpstreamFetch(feedUrl, maxRetries);
+  feedCache.set(feedUrl, { jobs: freshJobs, timestamp: Date.now() });
+
+  return {
+    jobs: freshJobs,
+    cached: false,
+    cacheAgeMs: 0,
+  };
+}
+
+async function executeUpstreamFetch(feedUrl: string, maxRetries: number): Promise<JobListing[]> {
   if (globalCircuitBreaker.isOpen()) {
     throw new Error('Circuit breaker is OPEN. Upstream RSS ingestion temporarily disabled to prevent cascade failures.');
   }
@@ -44,14 +121,14 @@ export async function fetchPublicJobs(
 
   while (attempt <= maxRetries) {
     try {
-      // 1. Enforce Token Bucket pacing before dispatching request
+      // 1. Enforce Token Bucket pacing
       await globalRateLimiter.acquire(1);
 
       // 2. Fetch using compliant bot headers
       const response = await fetch(feedUrl, {
         method: 'GET',
         headers: getCompliantBotHeaders(),
-        signal: AbortSignal.timeout(10000), // 10s timeout protection
+        signal: AbortSignal.timeout(8000), // 8s timeout protection
       });
 
       if (response.status === 429) {
@@ -64,7 +141,6 @@ export async function fetchPublicJobs(
 
       const xmlData = await response.text();
 
-      // Diagnostic: Empty response check
       if (!xmlData || xmlData.trim().length < 50) {
         throw new Error('Received empty or truncated XML response payload');
       }
@@ -75,7 +151,6 @@ export async function fetchPublicJobs(
         ignoreAttrs: false,
       });
 
-      // Support RSS 2.0 and Atom structures
       const rawItems = parsed.rss?.channel?.[0]?.item || parsed.feed?.entry || [];
       const validatedJobs: JobListing[] = [];
 

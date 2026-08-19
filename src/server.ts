@@ -2,7 +2,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import { fetchPublicJobs } from './ingestion/rss-fetcher';
+import { fetchPublicJobs, fetchPublicJobsWithMetadata } from './ingestion/rss-fetcher';
 import { scrapeSandboxJobs } from './ingestion/HTML-parser';
 import { globalCircuitBreaker, globalRateLimiter } from './ingestion/rate-limiter';
 import { validateTargetUrl } from './utils/security';
@@ -71,6 +71,7 @@ app.get('/api/jobs', async (req: Request, res: Response, next: NextFunction) => 
   try {
     const rawFeedUrl = (req.query.feed as string) || 'https://weworkremotely.com/remote-jobs.rss';
     const limit = Math.min(Math.max(parseInt(req.query.limit as string, 10) || 10, 1), 100);
+    const bypassCache = req.query.fresh === 'true' || req.query.nocache === 'true';
 
     // SSRF & Security Validation
     const validation = validateTargetUrl(rawFeedUrl, true);
@@ -84,7 +85,7 @@ app.get('/api/jobs', async (req: Request, res: Response, next: NextFunction) => 
     }
 
     const startTime = Date.now();
-    const jobs = await fetchPublicJobs(validation.sanitizedUrl);
+    const feedResult = await fetchPublicJobsWithMetadata(validation.sanitizedUrl, 3, bypassCache);
     const durationMs = Date.now() - startTime;
 
     res.json({
@@ -92,12 +93,14 @@ app.get('/api/jobs', async (req: Request, res: Response, next: NextFunction) => 
       source: 'WeWorkRemotely RSS (Public Structured Feed)',
       feedUrl: validation.sanitizedUrl,
       durationMs,
-      totalParsed: jobs.length,
-      returnedCount: Math.min(jobs.length, limit),
+      cached: feedResult.cached,
+      cacheAgeMs: feedResult.cacheAgeMs,
+      totalParsed: feedResult.jobs.length,
+      returnedCount: Math.min(feedResult.jobs.length, limit),
       timestamp: new Date().toISOString(),
       circuitBreaker: globalCircuitBreaker.getMetrics(),
       availableTokens: globalRateLimiter.getAvailableTokens(),
-      data: jobs.slice(0, limit),
+      data: feedResult.jobs.slice(0, limit),
     });
   } catch (error: any) {
     next(error);
@@ -611,6 +614,11 @@ if (require.main === module) {
   serverInstance = app.listen(PORT, () => {
     console.log(`[Acdyon Ingestion Engine] Service live on port ${PORT} (PID: ${process.pid})`);
     console.log(`[Environment] Mode: ${process.env.NODE_ENV || 'development'}`);
+
+    // Asynchronously pre-warm the public RSS feed cache on startup
+    fetchPublicJobsWithMetadata('https://weworkremotely.com/remote-jobs.rss')
+      .then((res) => console.log(`[Cache Pre-Warm] Ingested ${res.jobs.length} listings in background (0ms user latency ready).`))
+      .catch((err) => console.warn('[Cache Pre-Warm Warning]', err.message));
   });
 
   const handleShutdown = (signal: string) => {
