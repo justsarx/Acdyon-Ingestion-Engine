@@ -182,3 +182,12 @@ test('10. Browser Profiles: Client Hints & User-Agent pairing', () => {
     assert.ok(headers['sec-ch-ua-platform']);
   }
 });
+
+test('11. HTML Parser: Truncated / Empty Payload Byte-Length Threshold (< 300B)', () => {
+  const tinyHtml = '<html><body><span>No jobs</span></body></html>';
+  const result = ResilientHTMLParser.parseJobsFromHTML(tinyHtml);
+
+  assert.equal(result.diagnostics.isHoneypotOrBlocked, true);
+  assert.match(result.diagnostics.blockReason || '', /Suspiciously small payload/);
+  assert.equal(result.jobs.length, 0);
+});

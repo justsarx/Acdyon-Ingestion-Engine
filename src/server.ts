@@ -176,6 +176,45 @@ app.get('/api/health', (req: Request, res: Response) => {
 });
 
 /**
+ * 4. Deep Diagnostics & Detection Surface Telemetry
+ */
+app.get('/api/diagnostics', (req: Request, res: Response) => {
+  res.json({
+    status: 'operational',
+    service: 'acdyon-ingestion-engine',
+    version: '1.0.0',
+    runtime: {
+      node: process.version,
+      platform: process.platform,
+      arch: process.arch,
+      memoryUsageMB: Math.round(process.memoryUsage().heapUsed / 1024 / 1024 * 100) / 100,
+    },
+    pacingEngine: {
+      algorithm: 'Token Bucket',
+      capacity: 5,
+      refillRatePerSec: 2,
+      jitterStrategy: 'Uniform Full Jitter (±25%)',
+    },
+    resilienceEngine: {
+      tieredStrategies: [
+        'Strategy 0: JSON-LD Microdata (schema.org/JobPosting)',
+        'Strategy 1: Developer Contracts (data-testid attributes)',
+        'Strategy 2: Semantic CSS Class Fallback (.job-card)',
+        'Strategy 3: Structural Proximity & Keyword Density (h1-h4)',
+      ],
+      emptyPayloadDiagnosticThresholdBytes: 300,
+      honeypotSignaturesDetected: ['cloudflare', 'datadome', 'perimeterx', 'captcha', 'cf-challenge'],
+      contractValidation: 'Zod Runtime Schema SafeParse',
+    },
+    detectionSurfaceMitigations: {
+      secChUaPairing: 'Enforced via BrowserProfile Matrix',
+      headlessStealthReady: true,
+      robotsTxtEnforcement: 'Strict Crawl-delay compliance',
+    },
+  });
+});
+
+/**
  * 4. Production Dashboard & Interactive Test Console
  */
 app.get('/', (req: Request, res: Response) => {
