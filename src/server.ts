@@ -12,6 +12,9 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const IS_PROD = process.env.NODE_ENV === 'production';
 
+// Enable trust proxy for reverse-proxied cloud deployments (Render, Railway, Cloudflare)
+app.set('trust proxy', 1);
+
 // 1. Security Headers via Helmet (with permissive script policy for dashboard demo)
 app.use(
   helmet({
@@ -48,6 +51,7 @@ const apiLimiter = rateLimit({
   max: 120, // Limit each IP to 120 requests per window
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
   message: {
     status: 'error',
     code: 'RATE_LIMIT_EXCEEDED',
