@@ -1,0 +1,41 @@
+{
+  "name": "acdyon-ingestion-engine",
+  "version": "1.0.0",
+  "description": "Production-grade, resilient job ingestion engine with anti-bot detection surface defense, token-bucket rate limiting, and sandbox testing suite.",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "ts-node src/server.ts",
+    "sandbox": "ts-node src/sandbox-server.ts",
+    "test:sandbox": "ts-node -e 'import { scrapeSandboxJobs } from \"./src/ingestion/HTML-parser\"; scrapeSandboxJobs(\"http://localhost:4000/mock-jobs\").then(console.log).catch(console.error);'",
+    "test:rss": "ts-node -e 'import { fetchPublicJobs } from \"./src/ingestion/rss-fetcher\"; fetchPublicJobs(\"https://weworkremotely.com/remote-jobs.rss\").then(console.log).catch(console.error);'"
+  },
+  "keywords": [
+    "ingestion",
+    "resilience",
+    "rate-limiter",
+    "anti-bot-defense",
+    "rss",
+    "html-parser",
+    "acdyon"
+  ],
+  "author": "Lead Systems Architect & Senior Frontend Engineer",
+  "license": "MIT",
+  "dependencies": {
+    "cheerio": "^1.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "xml2js": "^0.6.2",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.13.5",
+    "@types/xml2js": "^0.4.14",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3"
+  }
+}
