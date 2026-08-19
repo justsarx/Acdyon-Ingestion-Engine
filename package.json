@@ -7,6 +7,7 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "dev": "ts-node src/server.ts",
+    "test": "ts-node tests/engine.test.ts",
     "sandbox": "ts-node src/sandbox-server.ts",
     "test:sandbox": "ts-node -e 'import { scrapeSandboxJobs } from \"./src/ingestion/HTML-parser\"; scrapeSandboxJobs(\"http://localhost:4000/mock-jobs\").then(console.log).catch(console.error);'",
     "test:rss": "ts-node -e 'import { fetchPublicJobs } from \"./src/ingestion/rss-fetcher\"; fetchPublicJobs(\"https://weworkremotely.com/remote-jobs.rss\").then(console.log).catch(console.error);'"
@@ -27,6 +28,8 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "express-rate-limit": "^8.6.2",
+    "helmet": "^8.3.0",
     "xml2js": "^0.6.2",
     "zod": "^3.24.2"
   },

@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  ingestion-engine:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: acdyon/ingestion-engine:1.0.0
+    container_name: acdyon-ingestion-service
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    security_opt:
+      - no-new-privileges:true
+    read_only: false
+    mem_limit: 512m
+    cpus: 1.0
