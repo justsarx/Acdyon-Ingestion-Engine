@@ -19,10 +19,11 @@ app.use(
       directives: {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrcAttr: ["'unsafe-inline'"],
         styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
         fontSrc: ["'self'", 'https://fonts.gstatic.com'],
         imgSrc: ["'self'", 'data:', 'https:'],
-        connectSrc: ["'self'"],
+        connectSrc: ["'self'", 'http:', 'https:'],
       },
     },
     crossOriginEmbedderPolicy: false,
@@ -386,7 +387,7 @@ app.get('/', (req: Request, res: Response) => {
           Ethical stream fetching from public job boards (WeWorkRemotely) using token-bucket pacing (2 req/sec), exponential backoff with full jitter, and strict Zod runtime contract validation.
         </p>
         <div class="btn-group">
-          <button class="btn" onclick="fetchEndpoint('/api/jobs?limit=5')">Fetch Top 5 Jobs</button>
+          <button class="btn action-btn" data-endpoint="/api/jobs?limit=5">Fetch Top 5 Jobs</button>
           <a class="btn btn-secondary" href="/api/jobs?limit=10" target="_blank">Raw API Stream ↗</a>
         </div>
       </div>
@@ -398,9 +399,9 @@ app.get('/', (req: Request, res: Response) => {
           Multi-strategy parser testing fallback selectors (<code>JSON-LD</code> &rarr; <code>data-testid</code> &rarr; <code>Semantic CSS</code> &rarr; <code>Structural Proximity</code>) and anti-bot challenge diagnostics.
         </p>
         <div class="btn-group">
-          <button class="btn btn-secondary" onclick="fetchEndpoint('/api/scrape-sandbox?target=standard')">Standard Target</button>
-          <button class="btn btn-secondary" onclick="fetchEndpoint('/api/scrape-sandbox?target=obfuscated')">Obfuscated CSS</button>
-          <button class="btn btn-danger" onclick="fetchEndpoint('/api/scrape-sandbox?target=honeypot')">Honeypot Trap</button>
+          <button class="btn btn-secondary action-btn" data-endpoint="/api/scrape-sandbox?target=standard">Standard Target</button>
+          <button class="btn btn-secondary action-btn" data-endpoint="/api/scrape-sandbox?target=obfuscated">Obfuscated CSS</button>
+          <button class="btn btn-danger action-btn" data-endpoint="/api/scrape-sandbox?target=honeypot">Honeypot Trap</button>
         </div>
       </div>
     </div>
@@ -434,7 +435,7 @@ app.get('/', (req: Request, res: Response) => {
           <span class="metric-label">Robots.txt Policy</span>
           <span class="metric-value">Strict (Crawl-delay Obeyed)</span>
         </div>
-        <button class="btn btn-secondary" style="width:100%; margin-top: 1.25rem;" onclick="fetchEndpoint('/api/health')">Query Telemetry (/api/health)</button>
+        <button class="btn btn-secondary action-btn" style="width:100%; margin-top: 1.25rem;" data-endpoint="/api/health">Query Telemetry (/api/health)</button>
       </div>
 
       <div class="card">
@@ -471,6 +472,8 @@ app.get('/', (req: Request, res: Response) => {
     async function fetchEndpoint(endpoint) {
       const output = document.getElementById('output');
       const timeSpan = document.getElementById('response-time');
+      if (!output || !timeSpan) return;
+      
       output.innerText = '// Requesting ' + endpoint + '...';
       timeSpan.innerText = 'Dispatching request...';
       
@@ -487,16 +490,38 @@ app.get('/', (req: Request, res: Response) => {
       }
     }
 
+    window.fetchEndpoint = fetchEndpoint;
+
+    // Attach click listeners to all action buttons with data-endpoint
+    function initActionButtons() {
+      const buttons = document.querySelectorAll('.action-btn, [data-endpoint]');
+      buttons.forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.preventDefault();
+          const endpoint = btn.getAttribute('data-endpoint');
+          if (endpoint) {
+            fetchEndpoint(endpoint);
+          }
+        });
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initActionButtons);
+    } else {
+      initActionButtons();
+    }
+
     // Bonus Round Easter Egg: Konami Code Handler
     const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
     let konamiIndex = 0;
 
-    document.addEventListener('keydown', (e) => {
+    document.addEventListener('keydown', function(e) {
       if (e.key === konamiCode[konamiIndex] || e.key.toLowerCase() === konamiCode[konamiIndex]) {
         konamiIndex++;
         if (konamiIndex === konamiCode.length) {
           const egg = document.getElementById('easter-egg');
-          egg.style.display = 'block';
+          if (egg) egg.style.display = 'block';
           konamiIndex = 0;
         }
       } else {
@@ -504,10 +529,13 @@ app.get('/', (req: Request, res: Response) => {
       }
     });
 
-    document.getElementById('secret-dot').addEventListener('click', () => {
-      const egg = document.getElementById('easter-egg');
-      egg.style.display = egg.style.display === 'block' ? 'none' : 'block';
-    });
+    const secretDot = document.getElementById('secret-dot');
+    if (secretDot) {
+      secretDot.addEventListener('click', function() {
+        const egg = document.getElementById('easter-egg');
+        if (egg) egg.style.display = egg.style.display === 'block' ? 'none' : 'block';
+      });
+    }
   </script>
 </body>
 </html>
