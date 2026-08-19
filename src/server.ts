@@ -425,15 +425,17 @@ app.get('/', (req: Request, res: Response) => {
       🎮 <strong>Bonus Easter Egg Unlocked:</strong> Konami Code detected! Stealth Matrix & Deep Telemetry HUD Enabled.
     </div>
 
+    <!-- Interactive Control Grid -->
     <div class="grid">
       <!-- 1. Live RSS Ingestion Card -->
       <div class="card">
-        <h2>Live RSS Ingestion <span class="badge badge-success">Compliant</span></h2>
+        <h2>Live RSS Ingestion <span class="badge badge-success">0ms Cached (SWR)</span></h2>
         <p>
-          Ethical stream fetching from public job boards (WeWorkRemotely) using token-bucket pacing (2 req/sec), exponential backoff with full jitter, and strict Zod runtime contract validation.
+          Ethical stream fetching from public job boards with token-bucket sub-second pacing (2 req/sec), in-memory SWR caching, and strict Zod runtime contract validation.
         </p>
         <div class="btn-group">
-          <button class="btn action-btn" data-endpoint="/api/jobs?limit=5">Fetch Top 5 Jobs</button>
+          <button class="btn action-btn" data-endpoint="/api/jobs?limit=10">Fetch Top 10 Jobs</button>
+          <button class="btn btn-secondary action-btn" data-endpoint="/api/jobs?limit=10&fresh=true">Bypass Cache (Cold)</button>
           <a class="btn btn-secondary" href="/api/jobs?limit=10" target="_blank">Raw API Stream ↗</a>
         </div>
       </div>
@@ -452,13 +454,40 @@ app.get('/', (req: Request, res: Response) => {
       </div>
     </div>
 
-    <!-- Live Console Output -->
+    <!-- Custom Target Sandbox Playground -->
     <div class="card" style="margin-bottom: 2rem;">
-      <div class="console-header">
-        <h2 style="margin-bottom: 0;">Live Stream & Diagnostic Console</h2>
-        <span id="response-time" style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted);">Idle — Select an action above</span>
+      <h2>Interactive Ingestion Playground <span class="badge">Live Test Target</span></h2>
+      <p style="margin-bottom: 0.85rem;">Test the ingestion engine and SSRF validator against any public URL or sandbox endpoint:</p>
+      <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+        <input type="text" id="custom-url-input" placeholder="e.g. https://weworkremotely.com/remote-jobs.rss" style="flex: 1; min-width: 280px; background: var(--card-inner); border: 1px solid var(--border); border-radius: 8px; padding: 0.65rem 1rem; color: #fff; font-family: var(--font-mono); font-size: 0.85rem;" value="https://weworkremotely.com/remote-jobs.rss">
+        <button class="btn" id="custom-fetch-btn">Run Public Ingestion</button>
+        <button class="btn btn-secondary" id="custom-scrape-btn">Run HTML Parser</button>
       </div>
-      <pre id="output">// Click one of the test triggers above to execute live ingestion and view the verified JSON payload...</pre>
+    </div>
+
+    <!-- Live Console Output with Tabs & Filter -->
+    <div class="card" style="margin-bottom: 2rem;">
+      <div class="console-header" style="flex-wrap: wrap; gap: 0.75rem;">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <h2 style="margin-bottom: 0;">Live Results Stream</h2>
+          <div style="display: flex; gap: 0.35rem;">
+            <button class="btn btn-secondary" id="tab-cards" style="padding: 0.35rem 0.75rem; font-size: 0.75rem;">Visual Cards</button>
+            <button class="btn" id="tab-json" style="padding: 0.35rem 0.75rem; font-size: 0.75rem;">Raw JSON</button>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+          <span id="response-time" style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted);">Ready</span>
+          <button class="btn btn-secondary" id="copy-btn" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;" title="Copy JSON payload">📋 Copy</button>
+        </div>
+      </div>
+
+      <!-- Live Search / Filter Input (Active for visual cards) -->
+      <div id="filter-container" style="display: none; margin-bottom: 1rem;">
+        <input type="text" id="filter-input" placeholder="🔍 Live filter by title, company, or location..." style="width: 100%; background: var(--card-inner); border: 1px solid var(--border); border-radius: 8px; padding: 0.6rem 1rem; color: #fff; font-family: var(--font-sans); font-size: 0.85rem;">
+      </div>
+
+      <pre id="output">// Click one of the test triggers above to execute live ingestion and view verified payloads...</pre>
+      <div id="cards-container" style="display: none; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;"></div>
     </div>
 
     <!-- Architectural Telemetry & Defense Surface Grid -->
@@ -474,6 +503,10 @@ app.get('/', (req: Request, res: Response) => {
           <span class="metric-value">&plusmn;25% Uniform Full Jitter</span>
         </div>
         <div class="metric">
+          <span class="metric-label">Caching Architecture</span>
+          <span class="metric-value">In-Memory SWR (Sub-10ms)</span>
+        </div>
+        <div class="metric">
           <span class="metric-label">Circuit Breaker Status</span>
           <span class="metric-value" id="circuit-state">CLOSED (0 Failures)</span>
         </div>
@@ -481,7 +514,7 @@ app.get('/', (req: Request, res: Response) => {
           <span class="metric-label">Robots.txt Policy</span>
           <span class="metric-value">Strict (Crawl-delay Obeyed)</span>
         </div>
-        <button class="btn btn-secondary action-btn" style="width:100%; margin-top: 1.25rem;" data-endpoint="/api/health">Query Telemetry (/api/health)</button>
+        <button class="btn btn-secondary action-btn" style="width:100%; margin-top: 1.25rem;" data-endpoint="/api/diagnostics">Query Diagnostics (/api/diagnostics)</button>
       </div>
 
       <div class="card">
@@ -502,6 +535,10 @@ app.get('/', (req: Request, res: Response) => {
           <span class="metric-label">Contract Integrity</span>
           <span class="metric-value">Zod SafeParse / Drop-on-Error</span>
         </div>
+        <div class="metric">
+          <span class="metric-label">SSRF Defense Subnets</span>
+          <span class="metric-value">RFC 1918 + Cloud Meta Blocked</span>
+        </div>
         <a class="btn btn-secondary" style="width:100%; margin-top: 1.25rem;" href="/sandbox/robots.txt" target="_blank">Inspect Mock robots.txt ↗</a>
       </div>
     </div>
@@ -509,12 +546,15 @@ app.get('/', (req: Request, res: Response) => {
     <footer>
       <p>Acdyon Technologies Engineering Assessment (Part 1 Track: Ingestion & Resilience Architecture).</p>
       <p style="margin-top: 0.4rem;">
-        Engineered with Node.js, TypeScript, Cheerio, xml2js, Helmet, and Zod. Read <a href="https://github.com/your-org/acdyon-ingestion-engine/blob/main/DECISIONS.md" target="_blank">DECISIONS.md</a> &amp; <a href="https://github.com/your-org/acdyon-ingestion-engine/blob/main/docs/architecture.md" target="_blank">architecture.md</a>.
+        Engineered with Node.js, TypeScript, Cheerio, xml2js, Helmet, and Zod. Read <a href="https://github.com/justsarx/Acdyon-Ingestion-Engine/blob/main/DECISIONS.md" target="_blank">DECISIONS.md</a> &amp; <a href="https://github.com/justsarx/Acdyon-Ingestion-Engine/blob/main/architecture_reference.md" target="_blank">architecture_reference.md</a>.
       </p>
     </footer>
   </div>
 
   <script>
+    let currentData = null;
+    let currentMode = 'json'; // 'json' or 'cards'
+
     async function fetchEndpoint(endpoint) {
       const output = document.getElementById('output');
       const timeSpan = document.getElementById('response-time');
@@ -528,28 +568,140 @@ app.get('/', (req: Request, res: Response) => {
         const res = await fetch(endpoint);
         const data = await res.json();
         const duration = Math.round(performance.now() - start);
-        timeSpan.innerText = 'Latency: ' + duration + 'ms (HTTP ' + res.status + ')';
+        const isCached = data.cached ? ' [RAM Cache ⚡]' : '';
+        timeSpan.innerText = 'Latency: ' + duration + 'ms (HTTP ' + res.status + ')' + isCached;
+        
+        currentData = data;
         output.innerText = JSON.stringify(data, null, 2);
+        renderVisualCards();
       } catch (err) {
         timeSpan.innerText = 'Request Failed';
         output.innerText = '// Error: ' + err.message;
+        currentData = null;
       }
     }
 
     window.fetchEndpoint = fetchEndpoint;
 
-    // Attach click listeners to all action buttons with data-endpoint
+    function renderVisualCards(filterText = '') {
+      const container = document.getElementById('cards-container');
+      if (!container) return;
+      container.innerHTML = '';
+      
+      const jobs = currentData && Array.isArray(currentData.data) ? currentData.data : [];
+      if (jobs.length === 0) {
+        container.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; padding: 1rem;">No formatted job cards available in this response payload.</div>';
+        return;
+      }
+
+      const q = filterText.toLowerCase();
+      const filtered = jobs.filter(j => 
+        (j.title && j.title.toLowerCase().includes(q)) ||
+        (j.company && j.company.toLowerCase().includes(q)) ||
+        (j.location && j.location.toLowerCase().includes(q))
+      );
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; padding: 1rem;">No jobs match your filter query: "' + filterText + '"</div>';
+        return;
+      }
+
+      filtered.forEach(job => {
+        const card = document.createElement('div');
+        card.style.cssText = 'background: var(--card-inner); border: 1px solid var(--border); border-radius: 10px; padding: 1.15rem; display: flex; flex-direction: column; justify-content: space-between; gap: 0.75rem;';
+        card.innerHTML = \`
+          <div>
+            <div style="font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 0.25rem;">\${escapeHtml(job.title)}</div>
+            <div style="font-size: 0.82rem; color: var(--primary); font-weight: 600;">\${escapeHtml(job.company)}</div>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: var(--text-muted);">
+            <span class="badge" style="padding: 0.15rem 0.5rem; font-size: 0.7rem;">\${escapeHtml(job.location || 'Remote')}</span>
+            \${job.link ? \`<a href="\${escapeHtml(job.link)}" target="_blank" style="color: var(--primary); font-weight: 600;">Apply ↗</a>\` : ''}
+          </div>
+        \`;
+        container.appendChild(card);
+      });
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
     function initActionButtons() {
       const buttons = document.querySelectorAll('.action-btn, [data-endpoint]');
       buttons.forEach(function(btn) {
         btn.addEventListener('click', function(e) {
           e.preventDefault();
           const endpoint = btn.getAttribute('data-endpoint');
-          if (endpoint) {
-            fetchEndpoint(endpoint);
-          }
+          if (endpoint) fetchEndpoint(endpoint);
         });
       });
+
+      // View Tabs
+      const tabJson = document.getElementById('tab-json');
+      const tabCards = document.getElementById('tab-cards');
+      const preOutput = document.getElementById('output');
+      const cardsContainer = document.getElementById('cards-container');
+      const filterContainer = document.getElementById('filter-container');
+
+      tabJson.addEventListener('click', () => {
+        currentMode = 'json';
+        tabJson.className = 'btn';
+        tabCards.className = 'btn btn-secondary';
+        preOutput.style.display = 'block';
+        cardsContainer.style.display = 'none';
+        filterContainer.style.display = 'none';
+      });
+
+      tabCards.addEventListener('click', () => {
+        currentMode = 'cards';
+        tabCards.className = 'btn';
+        tabJson.className = 'btn btn-secondary';
+        preOutput.style.display = 'none';
+        cardsContainer.style.display = 'grid';
+        filterContainer.style.display = 'block';
+        renderVisualCards();
+      });
+
+      // Search Filter
+      const filterInput = document.getElementById('filter-input');
+      if (filterInput) {
+        filterInput.addEventListener('input', (e) => {
+          renderVisualCards(e.target.value);
+        });
+      }
+
+      // Copy Button
+      const copyBtn = document.getElementById('copy-btn');
+      if (copyBtn) {
+        copyBtn.addEventListener('click', () => {
+          if (currentData) {
+            navigator.clipboard.writeText(JSON.stringify(currentData, null, 2));
+            copyBtn.innerText = '✓ Copied!';
+            setTimeout(() => { copyBtn.innerText = '📋 Copy'; }, 2000);
+          }
+        });
+      }
+
+      // Custom URL Testers
+      const customFetchBtn = document.getElementById('custom-fetch-btn');
+      const customScrapeBtn = document.getElementById('custom-scrape-btn');
+      const customUrlInput = document.getElementById('custom-url-input');
+
+      if (customFetchBtn && customUrlInput) {
+        customFetchBtn.addEventListener('click', () => {
+          const url = customUrlInput.value.trim();
+          if (url) fetchEndpoint('/api/jobs?feed=' + encodeURIComponent(url));
+        });
+      }
+
+      if (customScrapeBtn && customUrlInput) {
+        customScrapeBtn.addEventListener('click', () => {
+          const url = customUrlInput.value.trim();
+          if (url) fetchEndpoint('/api/scrape-sandbox?url=' + encodeURIComponent(url));
+        });
+      }
     }
 
     if (document.readyState === 'loading') {
